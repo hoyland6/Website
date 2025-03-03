@@ -1,0 +1,190 @@
+{
+  "composer": {
+    "name": "Orlando Gibbons",
+    "birth": "1583",
+    "death": "1625",
+    "birthplace": "Oxford, England",
+    "deathplace": "Canterbury, England",
+    "portrait": "assets/images/gibbons_portrait.jpg",
+    "bio": "Orlando Gibbons was an English composer, virginalist and organist of the late Tudor and early Jacobean periods. He was a leading composer in England in the early 17th century and a key figure in the transition from the Renaissance to the Baroque period."
+  },
+  "career": [
+    {
+      "year": "1596",
+      "event": "Entered the Choir of King's College, Cambridge",
+      "description": "At the age of 13, Gibbons became a member of the choir at King's College, Cambridge, where he began his formal musical education."
+    },
+    {
+      "year": "1603",
+      "event": "Appointed to the Chapel Royal",
+      "description": "Gibbons became a Gentleman of the Chapel Royal, serving as organist and composer for King James I."
+    },
+    {
+      "year": "1606",
+      "event": "Received Bachelor of Music degree",
+      "description": "Awarded a Bachelor of Music degree from the University of Cambridge."
+    },
+    {
+      "year": "1611",
+      "event": "Published first set of madrigals",
+      "description": "Released 'The First Set of Madrigals and Mottets of 5 Parts', which contained some of his most famous secular compositions."
+    },
+    {
+      "year": "1619",
+      "event": "Appointed as organist at Westminster Abbey",
+      "description": "While maintaining his position at the Chapel Royal, Gibbons also became the organist at Westminster Abbey."
+    },
+    {
+      "year": "1622",
+      "event": "Appointed as organist at Canterbury Cathedral",
+      "description": "Added the prestigious position of organist at Canterbury Cathedral to his duties."
+    },
+    {
+      "year": "1625",
+      "event": "Death in Canterbury",
+      "description": "Died suddenly of apoplexy (likely a stroke) while in Canterbury for a state visit by King Charles I and his queen."
+    }
+  ],
+  "compositions": [
+    {
+      "title": "The Silver Swan",
+      "year": "1612",
+      "type": "Madrigal",
+      "voices": "5",
+      "description": "Perhaps Gibbons' most famous madrigal, noted for its beautiful text painting and expressing the legend that swans sing only at the moment of their death.",
+      "audio": "assets/audio/silver_swan.mp3",
+      "fragment": "The silver Swan, who living had no Note, when Death approached, unlocked her silent throat."
+    },
+    {
+      "title": "O Clap Your Hands",
+      "year": "1622",
+      "type": "Anthem",
+      "voices": "8",
+      "description": "An exuberant eight-part anthem displaying Gibbons' mastery of polyphonic writing for double choir.",
+      "audio": "assets/audio/o_clap_your_hands.mp3",
+      "fragment": "O clap your hands, all ye people: shout unto God with the voice of triumph."
+    },
+    {
+      "title": "This Is the Record of John",
+      "year": "1615",
+      "type": "Verse Anthem",
+      "voices": "5",
+      "description": "A verse anthem for solo voice and chorus, with text from the Gospel of John, showing his innovative approach to sacred music.",
+      "audio": "assets/audio/record_of_john.mp3",
+      "fragment": "This is the record of John, when the Jews sent priests and Levites from Jerusalem to ask him, Who art thou?"
+    },
+    {
+      "title": "Fantasia in Four Parts",
+      "year": "1620",
+      "type": "Instrumental",
+      "voices": "4",
+      "description": "An intricate contrapuntal piece for viols displaying Gibbons' mastery of instrumental writing.",
+      "audio": "assets/audio/fantasia.mp3",
+      "fragment": null
+    },
+    {
+      "title": "Lord Salisbury Pavane",
+      "year": "1610",
+      "type": "Keyboard",
+      "voices": "1",
+      "description": "A stately keyboard piece composed in memory of Robert Cecil, the 1st Earl of Salisbury.",
+      "audio": "assets/audio/salisbury_pavane.mp3",
+      "fragment": null
+    }
+  ],
+  "locations": [
+    {
+      "name": "Chapel Royal",
+      "image": "assets/images/chapel_royal.jpg",
+      "description": "The Chapel Royal is not a building but a body of singers and priests who serve the spiritual needs of the monarch. Gibbons served here under King James I.",
+      "historical_fact": "The Chapel Royal was the primary venue for the development of English church music from Tudor times onward."
+    },
+    {
+      "name": "King's College, Cambridge",
+      "image": "assets/images/kings_college.jpg",
+      "description": "Famous for its chapel and choir, King's College is where Gibbons received his early musical training as a chorister.",
+      "historical_fact": "The choir of King's College Chapel has maintained the tradition of singing daily services since its foundation in 1441."
+    },
+    {
+      "name": "Westminster Abbey",
+      "image": "assets/images/westminster_abbey.jpg",
+      "description": "Gibbons served as organist at this royal church and Anglican cathedral in London, the traditional place of coronation and burial for English monarchs.",
+      "historical_fact": "Westminster Abbey houses the graves of many famous composers, including Henry Purcell and George Frideric Handel."
+    },
+    {
+      "name": "Canterbury Cathedral",
+      "image": "assets/images/canterbury_cathedral.jpg",
+      "description": "The cathedral where Gibbons worked as organist late in his career and where he died suddenly in 1625.",
+      "historical_fact": "Canterbury Cathedral has been a site of Christian worship for over 1400 years and is the cathedral of the Archbishop of Canterbury."
+    },
+    {
+      "name": "Royal Courts of James I",
+      "image": "assets/images/james_court.jpg",
+      "description": "The court of King James I was a center of artistic patronage where Gibbons composed and performed much of his music.",
+      "historical_fact": "King James I was a significant patron of the arts and commissioned the King James Bible, completed in 1611."
+    }
+  ],
+  "musical_terms": [
+    {
+      "term": "Madrigal",
+      "definition": "A secular vocal music composition of the Renaissance and early Baroque periods, typically written for four to six voices in complex contrapuntal style."
+    },
+    {
+      "term": "Anthem",
+      "definition": "A choral composition with English text, usually sacred, designed for use in Anglican church services."
+    },
+    {
+      "term": "Verse Anthem",
+      "definition": "A type of anthem popular in the late 16th and 17th centuries that alternates between sections for solo voice and full choir."
+    },
+    {
+      "term": "Fantasia",
+      "definition": "An instrumental composition with a free form and often improvisatory style, typically for keyboard or consort of viols."
+    },
+    {
+      "term": "Pavane",
+      "definition": "A slow processional dance common in Europe during the 16th century, often paired with a faster galliard."
+    },
+    {
+      "term": "Virginal",
+      "definition": "A small rectangular harpsichord popular in the 16th and 17th centuries, particularly in England."
+    }
+  ],
+  "historical_context": {
+    "tudor_period": {
+      "start": "1485",
+      "end": "1603",
+      "description": "The Tudor period marked the transition from medieval to early modern England, with significant religious reforms and cultural developments."
+    },
+    "stuart_period": {
+      "start": "1603",
+      "end": "1714",
+      "description": "The Stuart period saw the unification of the English and Scottish crowns, Civil War, and restoration of the monarchy."
+    },
+    "english_renaissance": {
+      "description": "A period of cultural and artistic flourishing in England in the late 16th and early 17th centuries, marked by advances in literature, drama, and music."
+    },
+    "significant_contemporaries": [
+      {
+        "name": "William Byrd",
+        "dates": "1540-1623",
+        "relationship": "Older contemporary and possible mentor to Gibbons, considered the greatest English composer of his time."
+      },
+      {
+        "name": "Thomas Weelkes",
+        "dates": "1576-1623",
+        "relationship": "Fellow composer of madrigals and church music, served as organist at Chichester Cathedral."
+      },
+      {
+        "name": "William Shakespeare",
+        "dates": "1564-1616",
+        "relationship": "Greatest dramatist of the age, whose career overlapped with Gibbons' life and work."
+      },
+      {
+        "name": "John Donne",
+        "dates": "1572-1631",
+        "relationship": "Metaphysical poet and Anglican priest whose literary career coincided with Gibbons' musical one."
+      }
+    ]
+  }
+} 
