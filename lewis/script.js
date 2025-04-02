@@ -463,7 +463,9 @@ function init() {
     camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 0.1, 1000);
     
     // Position camera - adjust based on device
-    camera.position.z = isMobile ? 20 : 18;
+    // Original was mobile:20/desktop:18, current is mobile:24/desktop:22
+    // Setting to halfway between: mobile:22/desktop:20
+    camera.position.z = isMobile ? 22 : 20;  // Halfway between original and current zoom
     camera.position.y = isMobile ? 16 : 15;
     camera.lookAt(new THREE.Vector3(0, -2, 0));
     
@@ -592,7 +594,9 @@ function onWindowResize() {
     camera.fov = isMobile ? 85 : 75;
     
     // If size changes dramatically (e.g., rotation), adjust camera position
-    camera.position.z = isMobile ? 20 : 18;
+    // Original was mobile:20/desktop:18, current is mobile:24/desktop:22
+    // Setting to halfway between: mobile:22/desktop:20
+    camera.position.z = isMobile ? 22 : 20;  // Halfway between original and current zoom
     camera.position.y = isMobile ? 16 : 15;
     
     camera.updateProjectionMatrix();
