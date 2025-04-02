@@ -303,7 +303,7 @@ function playHappyBirthdaySATB() {
         {
             time: quarterNote * 22,
             duration: halfNote,
-            chord: ["G2", "B2", "D3", "G4"] // (hold) - G (final tonic resolution with root position chord)
+            chord: ["G2", "B2", "D3", "C5"] // (hold) - G major with C on top (final tonic with added 4th for color)
         }
     ];
     
@@ -528,15 +528,15 @@ function animate() {
     });
     
     // Animate the birthday text
-    if (birthdayTextMesh) {
+    if (birthdayTextMesh && birthdayTextMesh.userData.baseYPosition) {
         // Subtle floating animation for the birthday text
-        birthdayTextMesh.position.y = 9 + Math.sin(Date.now() * 0.001) * 0.3;
+        birthdayTextMesh.position.y = birthdayTextMesh.userData.baseYPosition + Math.sin(Date.now() * 0.001) * 0.3;
     }
     
     // Animate the name text
-    if (nameTextMesh) {
+    if (nameTextMesh && nameTextMesh.userData.baseYPosition) {
         // Slightly different animation pattern for the name
-        nameTextMesh.position.y = 6.5 + Math.sin(Date.now() * 0.001 + 1) * 0.2;
+        nameTextMesh.position.y = nameTextMesh.userData.baseYPosition + Math.sin(Date.now() * 0.001 + 1) * 0.2;
     }
     
     // Animate sparkles
@@ -862,10 +862,18 @@ function createBirthdayText() {
     
     // Use the built-in font
     loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', function(font) {
-        // Create "Happy 19th Birthday" text
+        // Get screen dimensions to calculate appropriate text size
+        const isMobile = window.innerWidth < 768;
+        const isSmallPhone = window.innerWidth < 400;
+        
+        // Adjust text size based on screen size
+        const birthdayTextSize = isSmallPhone ? 0.8 : (isMobile ? 1.0 : 1.2);
+        const nameTextSize = isSmallPhone ? 0.9 : (isMobile ? 1.1 : 1.3);
+        
+        // Create "Happy 19th Birthday" text with responsive size
         const birthdayTextGeometry = new THREE.TextGeometry('Happy 19th Birthday', {
             font: font,
-            size: 1.2,
+            size: birthdayTextSize,
             height: 0.2,
             curveSegments: 12,
             bevelEnabled: true,
@@ -889,15 +897,16 @@ function createBirthdayText() {
         
         birthdayTextMesh = new THREE.Mesh(birthdayTextGeometry, textMaterial);
         
-        // Position the text higher above the cake
-        birthdayTextMesh.position.set(0, 9, 0);
+        // Position the text higher above the cake - adjust for mobile
+        const birthdayYPosition = isMobile ? 8 : 9;
+        birthdayTextMesh.position.set(0, birthdayYPosition, 0);
         
         scene.add(birthdayTextMesh);
         
         // Create "Lewis Cobb" name text below the birthday text
         const nameTextGeometry = new THREE.TextGeometry('Lewis Cobb', {
             font: font,
-            size: 1.3, // Increased size from 1.0 to 1.3
+            size: nameTextSize, // Responsive size based on device
             height: 0.2,
             curveSegments: 12,
             bevelEnabled: true,
@@ -921,8 +930,9 @@ function createBirthdayText() {
         
         nameTextMesh = new THREE.Mesh(nameTextGeometry, nameMaterial);
         
-        // Position the name text below the birthday text with less vertical space
-        nameTextMesh.position.set(0, 6.5, 0); // Changed from 7 to 6.5 to create moderate separation
+        // Position the name text below the birthday text with appropriate spacing for mobile
+        const nameYPosition = isMobile ? 5.8 : 6.5;
+        nameTextMesh.position.set(0, nameYPosition, 0);
         
         scene.add(nameTextMesh);
         
@@ -930,7 +940,21 @@ function createBirthdayText() {
         for (let i = 0; i < 40; i++) {
             createSparkle();
         }
+        
+        // Update the animation function to use the correct positions
+        updateTextAnimationPositions(birthdayYPosition, nameYPosition);
     });
+}
+
+// Helper function to update the animation positions
+function updateTextAnimationPositions(birthdayYPos, nameYPos) {
+    // Store base positions for animations to use
+    if (birthdayTextMesh) {
+        birthdayTextMesh.userData.baseYPosition = birthdayYPos;
+    }
+    if (nameTextMesh) {
+        nameTextMesh.userData.baseYPosition = nameYPos;
+    }
 }
 
 // Create a single sparkle
