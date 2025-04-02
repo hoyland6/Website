@@ -20,16 +20,6 @@ body {
     z-index: 1;
 }
 
-#info {
-    position: absolute;
-    top: 20px;
-    width: 100%;
-    text-align: center;
-    z-index: 10;
-    pointer-events: none;
-    text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-}
-
 h1 {
     font-size: 3em;
     margin-bottom: 0.2em;

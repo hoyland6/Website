@@ -13,7 +13,8 @@ const cakeColors = {
     green: 0x00aa44  // Green for leaf decorations
 };
 const candleColors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff]; // Red, Green, Blue, Yellow, Purple
-let textMesh;
+let birthdayTextMesh;
+let nameTextMesh;
 let sparkles = [];
 
 // Start the animation immediately and load Tone.js
@@ -41,16 +42,43 @@ function initHappyBirthdaySATB() {
     startButton.style.bottom = '20px';
     startButton.style.left = '50%';
     startButton.style.transform = 'translateX(-50%)';
-    startButton.style.padding = '10px 15px';
+    
+    // Make button size responsive based on viewport width
+    const updateButtonSize = () => {
+        const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+        // Base size on viewport width with minimum and maximum sizes
+        const basePadding = Math.min(Math.max(vw * 0.015, 12), 25);
+        const fontSize = Math.min(Math.max(vw * 0.018, 16), 28);
+        
+        startButton.style.padding = `${basePadding}px ${basePadding * 1.5}px`;
+        startButton.style.fontSize = `${fontSize}px`;
+    };
+    
+    // Set initial size and update on resize
+    updateButtonSize();
+    window.addEventListener('resize', updateButtonSize);
+    
     startButton.style.backgroundColor = 'rgba(255, 204, 0, 0.8)';
     startButton.style.color = '#333';
     startButton.style.border = 'none';
-    startButton.style.borderRadius = '5px';
+    startButton.style.borderRadius = '8px'; // Slightly larger border radius
     startButton.style.cursor = 'pointer';
     startButton.style.fontFamily = 'Arial, sans-serif';
     startButton.style.fontWeight = 'bold';
     startButton.style.zIndex = '100';
-    startButton.style.transition = 'opacity 0.8s ease-out';
+    startButton.style.transition = 'opacity 0.8s ease-out, transform 0.2s ease-out';
+    startButton.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)'; // Add subtle shadow for depth
+    
+    // Add hover effect
+    startButton.onmouseover = function() {
+        this.style.transform = 'translateX(-50%) scale(1.05)';
+        this.style.backgroundColor = 'rgba(255, 204, 0, 0.9)';
+    };
+    
+    startButton.onmouseout = function() {
+        this.style.transform = 'translateX(-50%)';
+        this.style.backgroundColor = 'rgba(255, 204, 0, 0.8)';
+    };
     
     startButton.onclick = function() {
         if (Tone.Transport.state !== 'started') {
@@ -114,22 +142,6 @@ function playHappyBirthdaySATB() {
         decay: 2.5,  // Longer decay for piano
         wet: 0.3     // Medium wetness
     }).connect(limiter);
-    
-    // Status indicator for user feedback
-    const statusElement = document.createElement('div');
-    statusElement.textContent = "Loading piano samples...";
-    statusElement.style.position = 'fixed';
-    statusElement.style.top = '20px';
-    statusElement.style.left = '50%';
-    statusElement.style.transform = 'translateX(-50%)';
-    statusElement.style.padding = '10px 20px';
-    statusElement.style.backgroundColor = 'rgba(255, 204, 0, 0.8)';
-    statusElement.style.color = '#333';
-    statusElement.style.fontFamily = 'Arial, sans-serif';
-    statusElement.style.fontWeight = 'bold';
-    statusElement.style.borderRadius = '5px';
-    statusElement.style.zIndex = '100';
-    document.body.appendChild(statusElement);
     
     // Simpler piano implementation using PolySynth as fallback
     // This will be used if Sampler fails to load properly
@@ -306,17 +318,6 @@ function playHappyBirthdaySATB() {
     sampleLoadingTimeout = setTimeout(() => {
         console.warn("Piano sample loading timeout - using fallback synthesizer");
         
-        // Immediately hide status
-        statusElement.style.opacity = '0';
-        statusElement.style.transition = 'opacity 0.5s ease-out';
-        setTimeout(() => {
-            try {
-                document.body.removeChild(statusElement);
-            } catch (e) {
-                // Element might already be removed
-            }
-        }, 500);
-        
         // Use the fallback piano
         useFallbackSynth = true;
         
@@ -353,17 +354,6 @@ function playHappyBirthdaySATB() {
                 if (!useFallbackSynth) {
                     console.log("Piano samples loaded successfully");
                     
-                    // Immediately hide status instead of showing "Piano loaded!" message
-                    statusElement.style.opacity = '0';
-                    statusElement.style.transition = 'opacity 0.5s ease-out';
-                    setTimeout(() => {
-                        try {
-                            document.body.removeChild(statusElement);
-                        } catch (e) {
-                            // Element might already be removed
-                        }
-                    }, 500);
-                    
                     // Schedule the piano parts - need to schedule only once for proper looping
                     scheduleChords(piano, pianoArrangement);
                     schedulePianoFlourish(piano, quarterNote * 23);
@@ -382,17 +372,7 @@ function playHappyBirthdaySATB() {
                 if (!useFallbackSynth) {
                     clearTimeout(sampleLoadingTimeout);
                     
-                    // Immediately hide status
-                    statusElement.style.opacity = '0';
-                    statusElement.style.transition = 'opacity 0.5s ease-out';
-                    setTimeout(() => {
-                        try {
-                            document.body.removeChild(statusElement);
-                        } catch (e) {
-                            // Element might already be removed
-                        }
-                    }, 500);
-                    
+                    // Use the fallback piano
                     useFallbackSynth = true;
                     
                     // Schedule music with fallback piano - only schedule once
@@ -413,17 +393,7 @@ function playHappyBirthdaySATB() {
         // If there's an exception, immediately use the fallback
         clearTimeout(sampleLoadingTimeout);
         
-        // Immediately hide status
-        statusElement.style.opacity = '0';
-        statusElement.style.transition = 'opacity 0.5s ease-out';
-        setTimeout(() => {
-            try {
-                document.body.removeChild(statusElement);
-            } catch (e) {
-                // Element might already be removed
-            }
-        }, 500);
-        
+        // Use the fallback piano
         useFallbackSynth = true;
         
         // Schedule music with fallback piano - only schedule once for proper looping
@@ -522,8 +492,8 @@ function init() {
     // Create candles
     createCandles();
     
-    // Create "19" text
-    create19Text();
+    // Create birthday text instead of "19" text
+    createBirthdayText();
     
     // Create confetti particles
     createParticles();
@@ -551,6 +521,18 @@ function animate() {
             candle.flame.scale.z = 1 + Math.cos(Date.now() * 0.01) * 0.1;
         }
     });
+    
+    // Animate the birthday text
+    if (birthdayTextMesh) {
+        // Subtle floating animation for the birthday text
+        birthdayTextMesh.position.y = 9 + Math.sin(Date.now() * 0.001) * 0.3;
+    }
+    
+    // Animate the name text
+    if (nameTextMesh) {
+        // Slightly different animation pattern for the name
+        nameTextMesh.position.y = 6.5 + Math.sin(Date.now() * 0.001 + 1) * 0.2;
+    }
     
     // Animate sparkles
     sparkles.forEach(sparkle => {
@@ -587,13 +569,6 @@ function animate() {
         }
         
         particles.geometry.attributes.position.needsUpdate = true;
-    }
-    
-    // Animate the 19 text
-    if (textMesh) {
-        // Keep the text centered while it bobs up and down
-        textMesh.position.y = 7 + Math.sin(Date.now() * 0.002) * 0.5;
-        textMesh.rotation.y += 0.01;
     }
     
     controls.update();
@@ -863,31 +838,31 @@ function createCandle(x, y, z, index) {
     candles.push(candle);
 }
 
-// Create "19" text
-function create19Text() {
+// Create Birthday text instead of "19" text
+function createBirthdayText() {
     // Using the non-module version of FontLoader
     const loader = new THREE.FontLoader();
     
     // Use the built-in font
     loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', function(font) {
-        // Using the non-module version of TextGeometry
-        const textGeometry = new THREE.TextGeometry('19', {
+        // Create "Happy 19th Birthday" text
+        const birthdayTextGeometry = new THREE.TextGeometry('Happy 19th Birthday', {
             font: font,
-            size: 2,
-            height: 0.5,
+            size: 1.2,
+            height: 0.2,
             curveSegments: 12,
             bevelEnabled: true,
-            bevelThickness: 0.1,
-            bevelSize: 0.05,
+            bevelThickness: 0.05,
+            bevelSize: 0.03,
             bevelSegments: 5
         });
         
         // Center the text
-        textGeometry.computeBoundingBox();
-        const textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
+        birthdayTextGeometry.computeBoundingBox();
+        const birthdayTextWidth = birthdayTextGeometry.boundingBox.max.x - birthdayTextGeometry.boundingBox.min.x;
         
         // Center the geometry itself
-        textGeometry.translate(-textWidth / 2, 0, 0);
+        birthdayTextGeometry.translate(-birthdayTextWidth / 2, 0, 0);
         
         const textMaterial = new THREE.MeshPhongMaterial({ 
             color: 0xffcc00,
@@ -895,16 +870,47 @@ function create19Text() {
             shininess: 100
         });
         
-        textMesh = new THREE.Mesh(textGeometry, textMaterial);
+        birthdayTextMesh = new THREE.Mesh(birthdayTextGeometry, textMaterial);
         
         // Position the text higher above the cake
-        // The tall cake is approximately 6 units high, positioning at cake's top + some distance
-        textMesh.position.set(0, 7, 0); // Raised higher to hover above the taller cake
+        birthdayTextMesh.position.set(0, 9, 0);
         
-        scene.add(textMesh);
+        scene.add(birthdayTextMesh);
         
-        // Create sparkles around the text
-        for (let i = 0; i < 30; i++) {
+        // Create "Lewis Cobb" name text below the birthday text
+        const nameTextGeometry = new THREE.TextGeometry('Lewis Cobb', {
+            font: font,
+            size: 1.3, // Increased size from 1.0 to 1.3
+            height: 0.2,
+            curveSegments: 12,
+            bevelEnabled: true,
+            bevelThickness: 0.05,
+            bevelSize: 0.03,
+            bevelSegments: 5
+        });
+        
+        // Center the text
+        nameTextGeometry.computeBoundingBox();
+        const nameTextWidth = nameTextGeometry.boundingBox.max.x - nameTextGeometry.boundingBox.min.x;
+        
+        // Center the geometry itself
+        nameTextGeometry.translate(-nameTextWidth / 2, 0, 0);
+        
+        const nameMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0xff6600, // Different color for name
+            specular: 0xffffff,
+            shininess: 100
+        });
+        
+        nameTextMesh = new THREE.Mesh(nameTextGeometry, nameMaterial);
+        
+        // Position the name text below the birthday text with less vertical space
+        nameTextMesh.position.set(0, 6.5, 0); // Changed from 7 to 6.5 to create moderate separation
+        
+        scene.add(nameTextMesh);
+        
+        // Create sparkles around both texts
+        for (let i = 0; i < 40; i++) {
             createSparkle();
         }
     });
@@ -923,9 +929,9 @@ function createSparkle() {
     
     const sparkle = new THREE.Mesh(sparkleGeometry, sparkleMaterial);
     
-    // Position randomly around the centered "19" text (adjusted for new height)
-    sparkle.position.x = (Math.random() - 0.5) * 6; // Still centered around x=0
-    sparkle.position.y = 7 + (Math.random() - 0.5) * 3; // Updated to match the new text position
+    // Position randomly around the birthday text
+    sparkle.position.x = (Math.random() - 0.5) * 10; // Wider area
+    sparkle.position.y = 7 + (Math.random() - 0.5) * 3; // Area covering both texts
     sparkle.position.z = (Math.random() - 0.5) * 3;
     
     scene.add(sparkle);
