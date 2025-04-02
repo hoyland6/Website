@@ -456,16 +456,21 @@ function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x111133);
     
-    // Create camera
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 18;
-    camera.position.y = 15;
+    // Create camera with responsive field of view
+    const isMobile = window.innerWidth < 768;
+    // Wider FOV on mobile to ensure the entire cake is visible
+    const fov = isMobile ? 85 : 75;
+    camera = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 0.1, 1000);
+    
+    // Position camera - adjust based on device
+    camera.position.z = isMobile ? 20 : 18;
+    camera.position.y = isMobile ? 16 : 15;
     camera.lookAt(new THREE.Vector3(0, -2, 0));
     
     // Create renderer
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
     document.getElementById('container').appendChild(renderer.domElement);
     
     // Add orbit controls
@@ -577,7 +582,19 @@ function animate() {
 
 // Handle window resize
 function onWindowResize() {
+    // Check if device is mobile based on viewport width
+    const isMobile = window.innerWidth < 768;
+    
+    // Update camera aspect ratio
     camera.aspect = window.innerWidth / window.innerHeight;
+    
+    // Adjust field of view based on device type
+    camera.fov = isMobile ? 85 : 75;
+    
+    // If size changes dramatically (e.g., rotation), adjust camera position
+    camera.position.z = isMobile ? 20 : 18;
+    camera.position.y = isMobile ? 16 : 15;
+    
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
