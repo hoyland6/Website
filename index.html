@@ -1,27 +1,816 @@
 <!DOCTYPE html>
+<!--
+  Choir Simulator — a single-file HTML5 Web Audio application.
+  Serve via HTTP (e.g.  py -m http.server 8000) because fetch() and
+  Web Audio do not work reliably from the file:// protocol.
+-->
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Harry Hoyland</title>
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Choir Simulator</title>
+<style>
+/* ── Theme custom properties ─────────────────────────── */
+:root {
+  --bg:          #121218;
+  --bg-card:     #1c1c26;
+  --bg-card-alt: #22222e;
+  --bg-input:    #16161e;
+  --border:      #333346;
+  --text:        #e0e0ec;
+  --text-dim:    #8888a0;
+  --accent:      #6c8cff;
+  --accent-glow: #4466ee;
+  --green:       #44cc88;
+  --red:         #ee5566;
+  --orange:      #eea844;
+  --pill-bg:     #2a2a3a;
+  --pill-active: #6c8cff;
+  --pill-shift:  #eea844;
+  --radius:      8px;
+  --mono:        'Fira Code', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+}
+
+/* ── Reset & base ────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Layout ──────────────────────────────────────────── */
+.container { max-width: 1200px; margin: 0 auto; padding: 1.2rem; }
+h1 { font-size: 1.8rem; font-weight: 700; color: var(--accent); margin-bottom: .2rem; }
+h1 span { font-weight: 400; font-size: 1rem; color: var(--text-dim); }
+h2 { font-size: 1.2rem; font-weight: 600; margin-bottom: .4rem; }
+
+/* ── Global controls bar ─────────────────────────────── */
+.controls {
+  display: flex; flex-wrap: wrap; gap: .8rem; align-items: center;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .8rem 1rem; margin-bottom: 1rem;
+}
+.controls label { font-size: .85rem; color: var(--text-dim); display: flex; align-items: center; gap: .35rem; }
+.controls input[type="number"] {
+  width: 5rem; background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text); padding: .25rem .4rem; font-size: .9rem;
+  text-align: center;
+}
+.controls input[type="range"] { width: 100px; accent-color: var(--accent); }
+.btn {
+  background: var(--accent); color: #fff; border: none; border-radius: 4px;
+  padding: .45rem 1.2rem; font-size: .9rem; font-weight: 600; cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+.btn:hover { background: var(--accent-glow); }
+.btn:active { transform: scale(.97); }
+.btn.stop { background: var(--red); }
+.btn.stop:hover { background: #dd3344; }
+.status {
+  font-size: .85rem; color: var(--text-dim); margin-left: auto;
+  display: flex; gap: .6rem; align-items: center;
+}
+.status .dot {
+  width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+}
+.dot-loading  { background: var(--orange); animation: pulse 1s infinite; }
+.dot-ready    { background: var(--green); }
+.dot-playing  { background: var(--accent); animation: pulse .6s infinite; }
+.dot-error    { background: var(--red); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+.time-display { font-family: var(--mono); font-size: .85rem; color: var(--text-dim); }
+
+/* ── Help section ────────────────────────────────────── */
+.help-toggle {
+  background: none; border: 1px solid var(--border); color: var(--text-dim);
+  border-radius: 4px; padding: .3rem .7rem; font-size: .8rem; cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.help-toggle:hover { color: var(--text); border-color: var(--text-dim); }
+.help-panel {
+  max-height: 0; overflow: hidden; transition: max-height .35s ease;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 1rem;
+}
+.help-panel.open { max-height: 600px; }
+.help-panel pre {
+  padding: 1rem; font-family: var(--mono); font-size: .82rem;
+  line-height: 1.55; white-space: pre-wrap; color: var(--text-dim);
+}
+
+/* ── Singer cards ────────────────────────────────────── */
+.singers-grid {
+  display: grid; gap: 1rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 850px) { .singers-grid { grid-template-columns: 1fr 1fr; } }
+
+.singer-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1rem; display: flex; flex-direction: column; gap: .5rem;
+}
+.singer-card:nth-child(even) { background: var(--bg-card-alt); }
+.singer-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .4rem; }
+.singer-range { font-size: .8rem; color: var(--text-dim); }
+.singer-range .shift-note { font-style: italic; font-size: .75rem; color: var(--orange); }
+.singer-vol { display: flex; align-items: center; gap: .35rem; font-size: .82rem; color: var(--text-dim); }
+.singer-vol input[type="range"] { width: 90px; accent-color: var(--accent); }
+textarea.score-input {
+  width: 100%; min-height: 4.5rem; resize: vertical;
+  background: var(--bg-input); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text); font-family: var(--mono); font-size: .85rem;
+  padding: .5rem; line-height: 1.45;
+  transition: border-color .2s;
+}
+textarea.score-input:focus { outline: none; border-color: var(--accent); }
+textarea.score-input.has-error { border-color: var(--red); }
+.validation {
+  font-size: .8rem; min-height: 1.1rem;
+}
+.validation.ok { color: var(--green); }
+.validation.err { color: var(--red); }
+
+/* ── Note pills (playback visualiser) ────────────────── */
+.pills-row {
+  display: flex; gap: 3px; overflow-x: auto; padding: 4px 0;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+.pills-row::-webkit-scrollbar { height: 6px; }
+.pills-row::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.pill {
+  flex: 0 0 auto; padding: 2px 7px; border-radius: 4px;
+  font-family: var(--mono); font-size: .72rem; line-height: 1.3;
+  background: var(--pill-bg); color: var(--text-dim); white-space: nowrap;
+  transition: background .15s, color .15s, transform .15s;
+  border: 1px solid transparent;
+}
+.pill.rest { opacity: .5; }
+.pill.shifted { border: 1px dashed var(--pill-shift); }
+.pill.shifted::after { content: ' \2195'; font-size: .65rem; }
+.pill.active {
+  background: var(--pill-active); color: #fff; transform: scale(1.12);
+  box-shadow: 0 0 8px rgba(108,140,255,.5);
+}
+.pill.played { opacity: .45; }
+
+/* ── Error banner ────────────────────────────────────── */
+.error-banner {
+  background: rgba(238,85,102,.12); border: 1px solid var(--red);
+  border-radius: var(--radius); padding: .6rem 1rem; margin-bottom: 1rem;
+  color: var(--red); font-size: .85rem; display: none;
+}
+.error-banner.visible { display: block; }
+
+/* ── Scrollbar & misc ────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::selection { background: var(--accent); color: #fff; }
+</style>
 </head>
 <body>
-    <main>
-        <section class="projects-grid">
-            <!-- Project placeholder
-            <a href="#" class="project-card">
-                <div class="project-content">
-                    <h3>Project One</h3>
-                    <p>A minimalist design approach focusing on clean typography and subtle interactions. This project showcases the power of simplicity in web design.</p>
-                </div>
-            </a>
-            -->
-        </section>
-    </main>
+<div class="container">
 
-    <footer>
-        <p>&copy; 2025 Harry Hoyland</p>
-    </footer>
+  <!-- Title -->
+  <h1>Choir Simulator <span>— Web Audio Playback</span></h1>
+
+  <!-- Global controls -->
+  <div class="controls" id="controls">
+    <label>BPM
+      <input type="number" id="bpmInput" value="120" min="20" max="400" step="1">
+    </label>
+    <label>Master Vol
+      <input type="range" id="masterVol" min="0" max="100" value="80">
+    </label>
+    <button class="btn" id="playBtn" disabled>Play</button>
+    <button class="help-toggle" id="helpToggle">? Score Format</button>
+    <div class="status">
+      <span class="dot dot-loading" id="statusDot"></span>
+      <span id="statusText">Loading…</span>
+      <span class="time-display" id="timeDisplay"></span>
+    </div>
+  </div>
+
+  <!-- Help panel -->
+  <div class="help-panel" id="helpPanel">
+    <pre>
+SCORE FORMAT:  NoteName.NoteLength  separated by commas
+
+Note Names:
+  Standard notes: C4, D3, A5, B2, etc.
+  Sharps: add "s" — Cs4 (C#4), Fs3 (F#3)
+  Flats:  add "b" — Bb3 (B♭3), Eb4 (E♭4)
+  Rest:   use "r" — r.4 (crotchet rest), r.8 (minim rest)
+
+Note Lengths (in semiquaver units):
+  1  = semiquaver (sixteenth note)
+  2  = quaver (eighth note)
+  3  = dotted quaver
+  4  = crotchet / quarter note  (one beat)
+  6  = dotted crotchet
+  8  = minim / half note
+  12 = dotted minim
+  16 = semibreve / whole note
+  Any positive integer works.
+
+Example:
+  C4.4, D4.4, E4.4, F4.4, G4.8, r.4, C4.2, E4.2, G4.4, C5.8
+    </pre>
+  </div>
+
+  <!-- Error banner -->
+  <div class="error-banner" id="errorBanner"></div>
+
+  <!-- Singer cards injected here -->
+  <div class="singers-grid" id="singersGrid"></div>
+
+</div>
+
+<script>
+/* ================================================================
+   Choir Simulator — main application logic
+   ================================================================ */
+(() => {
+"use strict";
+
+/* ── Music theory constants ─────────────────────────── */
+const NOTE_NAMES_SHARP = ["C","Cs","D","Ds","E","F","Fs","G","Gs","A","As","B"];
+const NOTE_NAMES_FLAT  = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+// Map any note name (without octave) to its semitone offset from C
+const NAME_TO_SEMI = {};
+NOTE_NAMES_SHARP.forEach((n, i) => NAME_TO_SEMI[n] = i);
+NOTE_NAMES_FLAT.forEach((n, i)  => NAME_TO_SEMI[n] = i);
+
+/**
+ * Parse a note name string (e.g. "Cs4", "Bb3", "C4") into a MIDI number.
+ * Returns null for "r" (rest) or invalid input.
+ */
+function noteToMidi(name) {
+  if (!name) return null;
+  const m = name.match(/^([A-Ga-g])([sb]?)(\d+)$/);
+  if (!m) return null;
+  let letter = m[1].toUpperCase();
+  const acc = m[2].toLowerCase();
+  const octave = parseInt(m[3], 10);
+  let noteName = letter + (acc === 's' ? 's' : acc === 'b' ? 'b' : '');
+  const semi = NAME_TO_SEMI[noteName];
+  if (semi === undefined) return null;
+  return (octave + 1) * 12 + semi;
+}
+
+/**
+ * Convert MIDI number to a display-friendly note name.
+ * Uses sharps by default.
+ */
+function midiToNoteName(midi) {
+  const octave = Math.floor(midi / 12) - 1;
+  const semi = midi % 12;
+  return NOTE_NAMES_SHARP[semi] + octave;
+}
+
+/**
+ * Normalise a user-supplied note name: uppercase letter, keep accidental, keep octave.
+ * Returns the normalised string or null if invalid.
+ */
+function normaliseNoteName(raw) {
+  const m = raw.match(/^([A-Ga-g])([sb]?)(\d+)$/);
+  if (!m) return null;
+  return m[1].toUpperCase() + m[2].toLowerCase() + m[3];
+}
+
+/* ── Audio context & globals ─────────────────────────── */
+let audioCtx = null;
+let masterGain = null;
+const singers = [];          // populated from singers.json
+let isPlaying = false;
+let activeSources = [];      // AudioBufferSourceNodes to stop
+let playbackStartTime = 0;
+let totalPlaybackDuration = 0;
+let animFrameId = null;
+
+/* ── DOM refs ────────────────────────────────────────── */
+const bpmInput    = document.getElementById('bpmInput');
+const masterVol   = document.getElementById('masterVol');
+const playBtn     = document.getElementById('playBtn');
+const helpToggle  = document.getElementById('helpToggle');
+const helpPanel   = document.getElementById('helpPanel');
+const statusDot   = document.getElementById('statusDot');
+const statusText  = document.getElementById('statusText');
+const timeDisplay = document.getElementById('timeDisplay');
+const singersGrid = document.getElementById('singersGrid');
+const errorBanner = document.getElementById('errorBanner');
+
+/* ── Helper: format seconds as MM:SS ─────────────────── */
+function fmtTime(sec) {
+  sec = Math.max(0, sec);
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+}
+
+/* ── Ensure AudioContext is created (needs user gesture) ─ */
+function ensureAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.connect(audioCtx.destination);
+    updateMasterVol();
+  }
+}
+
+function updateMasterVol() {
+  if (masterGain) masterGain.gain.value = masterVol.value / 100;
+}
+masterVol.addEventListener('input', updateMasterVol);
+
+/* ── Help toggle ─────────────────────────────────────── */
+helpToggle.addEventListener('click', () => helpPanel.classList.toggle('open'));
+
+/* ── Set status indicator ────────────────────────────── */
+function setStatus(state, text) {
+  statusDot.className = 'dot dot-' + state;
+  statusText.textContent = text;
+}
+
+/* ── Show / hide error banner ────────────────────────── */
+function showError(msg) { errorBanner.textContent = msg; errorBanner.classList.add('visible'); }
+function hideError()    { errorBanner.classList.remove('visible'); }
+
+/* ================================================================
+   Loading singers and audio
+   ================================================================ */
+
+async function loadApp() {
+  setStatus('loading', 'Fetching manifest…');
+
+  let data;
+  try {
+    const resp = await fetch('singers.json');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    data = await resp.json();
+  } catch (e) {
+    setStatus('error', 'Failed to load singers.json');
+    showError('Could not fetch singers.json — make sure you are serving via HTTP and the file exists. ' + e.message);
+    return;
+  }
+
+  if (!data.singers || !data.singers.length) {
+    setStatus('error', 'No singers defined');
+    showError('singers.json contains no singer entries.');
+    return;
+  }
+
+  // AudioContext is needed for decodeAudioData; it works even in suspended
+  // state, which is fine — we resume on user gesture (Play button).
+  ensureAudioCtx();
+
+  // Build singer objects and DOM
+  for (const sd of data.singers) {
+    const singer = {
+      name: sd.name,
+      noteNames: sd.notes,          // original filename stems
+      buffers: {},                   // midi -> AudioBuffer
+      midiNumbers: [],               // sorted list of available MIDI numbers
+      gainNode: null,
+      el: {},                        // DOM references
+    };
+
+    // Pre-compute MIDI mapping for each available note.
+    // Because we key by MIDI number, enharmonic equivalents (e.g. Bb3 and
+    // As3 both = MIDI 58) automatically resolve to the same buffer slot.
+    for (const nn of sd.notes) {
+      const midi = noteToMidi(nn);
+      if (midi !== null) {
+        if (!singer.midiNumbers.includes(midi)) singer.midiNumbers.push(midi);
+        singer.buffers[midi] = null; // placeholder
+      }
+    }
+    singer.midiNumbers.sort((a, b) => a - b);
+
+    // Create GainNode
+    singer.gainNode = audioCtx.createGain();
+    singer.gainNode.gain.value = 0.8;
+    singer.gainNode.connect(masterGain);
+
+    singers.push(singer);
+    createSingerCard(singer);
+  }
+
+  // Load all audio files concurrently
+  const totalFiles = singers.reduce((s, sg) => s + sg.noteNames.length, 0);
+  let loaded = 0;
+  setStatus('loading', `Loading audio: 0/${totalFiles}`);
+
+  const loadPromises = [];
+
+  for (const singer of singers) {
+    for (const nn of singer.noteNames) {
+      const midi = noteToMidi(nn);
+      if (midi === null) continue;
+      const basePath = `Singers/${singer.name}/${nn}`;
+      loadPromises.push(
+        loadAudioFile(basePath).then(buf => {
+          if (buf) singer.buffers[midi] = buf;
+          loaded++;
+          setStatus('loading', `Loading audio: ${loaded}/${totalFiles}`);
+        })
+      );
+    }
+  }
+
+  await Promise.all(loadPromises);
+
+  // Remove midi entries that failed to load
+  for (const singer of singers) {
+    singer.midiNumbers = singer.midiNumbers.filter(m => singer.buffers[m] !== null);
+    updateRangeDisplay(singer);
+  }
+
+  setStatus('ready', 'Ready');
+  playBtn.disabled = false;
+}
+
+/**
+ * Try to load an audio file as .mp3 first, then .wav fallback.
+ * Returns AudioBuffer or null.
+ */
+async function loadAudioFile(basePath) {
+  for (const ext of ['.mp3', '.wav']) {
+    try {
+      const resp = await fetch(basePath + ext);
+      if (!resp.ok) continue;
+      const arrayBuf = await resp.arrayBuffer();
+      return await audioCtx.decodeAudioData(arrayBuf);
+    } catch (e) {
+      // try next extension
+    }
+  }
+  console.warn(`Could not load audio: ${basePath} (.mp3 or .wav)`);
+  return null;
+}
+
+/* ================================================================
+   Singer card DOM
+   ================================================================ */
+
+function createSingerCard(singer) {
+  const card = document.createElement('div');
+  card.className = 'singer-card';
+
+  card.innerHTML = `
+    <div class="singer-header">
+      <h2>${esc(singer.name)}</h2>
+      <div class="singer-vol">
+        Vol <input type="range" min="0" max="100" value="80" data-singer-vol>
+      </div>
+    </div>
+    <div class="singer-range" data-range></div>
+    <textarea class="score-input" data-score
+      placeholder="e.g. C4.4,D4.4,r.8,A3.2"
+      spellcheck="false"></textarea>
+    <div class="validation" data-validation></div>
+    <div class="pills-row" data-pills></div>
+  `;
+
+  // Wire volume slider
+  const volSlider = card.querySelector('[data-singer-vol]');
+  volSlider.addEventListener('input', () => {
+    singer.gainNode.gain.value = volSlider.value / 100;
+  });
+
+  // Wire score textarea (debounced validation)
+  const textarea = card.querySelector('[data-score]');
+  let debounceTimer = null;
+  textarea.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => validateSingerScore(singer), 250);
+  });
+
+  singer.el = {
+    card,
+    textarea,
+    validation: card.querySelector('[data-validation]'),
+    range: card.querySelector('[data-range]'),
+    pills: card.querySelector('[data-pills]'),
+  };
+
+  singersGrid.appendChild(card);
+}
+
+function updateRangeDisplay(singer) {
+  if (singer.midiNumbers.length === 0) {
+    singer.el.range.innerHTML = 'No audio loaded';
+    return;
+  }
+  const low = midiToNoteName(singer.midiNumbers[0]);
+  const high = midiToNoteName(singer.midiNumbers[singer.midiNumbers.length - 1]);
+  singer.el.range.innerHTML =
+    `Recorded Range: <strong>${formatDisplay(low)} – ${formatDisplay(high)}</strong> ` +
+    `<span class="shift-note">Notes outside this range will be pitch-shifted automatically</span>`;
+}
+
+/** Turn "Cs4" into "C#4" etc. for display */
+function formatDisplay(name) {
+  return name.replace(/s(\d)/, '#$1').replace(/b(\d)/, '♭$1');
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+/* ================================================================
+   Score parsing & validation
+   ================================================================ */
+
+/**
+ * Parse a score string. Returns { notes: [...], error: string|null }.
+ * Each note: { name, midi, length, isRest, raw }
+ */
+function parseScore(text) {
+  const entries = text.split(',').map(s => s.trim()).filter(s => s.length > 0);
+  const notes = [];
+
+  for (let i = 0; i < entries.length; i++) {
+    const raw = entries[i];
+    const dotIdx = raw.lastIndexOf('.');
+    if (dotIdx === -1) {
+      return { notes: [], error: `Entry ${i + 1}: missing dot separator in "${raw}"` };
+    }
+    const notePart = raw.substring(0, dotIdx).trim();
+    const lenPart  = raw.substring(dotIdx + 1).trim();
+    const length   = parseInt(lenPart, 10);
+    if (isNaN(length) || length <= 0) {
+      return { notes: [], error: `Entry ${i + 1}: invalid length "${lenPart}" in "${raw}"` };
+    }
+
+    if (notePart.toLowerCase() === 'r') {
+      notes.push({ name: 'r', midi: null, length, isRest: true, raw });
+      continue;
+    }
+
+    const norm = normaliseNoteName(notePart);
+    if (!norm) {
+      return { notes: [], error: `Entry ${i + 1}: invalid note name "${notePart}"` };
+    }
+    const midi = noteToMidi(norm);
+    if (midi === null) {
+      return { notes: [], error: `Entry ${i + 1}: cannot parse note "${notePart}"` };
+    }
+    notes.push({ name: norm, midi, length, isRest: false, raw });
+  }
+
+  return { notes, error: null };
+}
+
+function validateSingerScore(singer) {
+  const text = singer.el.textarea.value.trim();
+  if (text.length === 0) {
+    singer.el.validation.textContent = '';
+    singer.el.validation.className = 'validation';
+    singer.el.textarea.classList.remove('has-error');
+    singer.el.pills.innerHTML = '';
+    return true;
+  }
+  const result = parseScore(text);
+  if (result.error) {
+    singer.el.validation.textContent = result.error;
+    singer.el.validation.className = 'validation err';
+    singer.el.textarea.classList.add('has-error');
+    singer.el.pills.innerHTML = '';
+    return false;
+  }
+  singer.el.validation.textContent = '✓ Valid — ' + result.notes.length + ' entries';
+  singer.el.validation.className = 'validation ok';
+  singer.el.textarea.classList.remove('has-error');
+
+  // Build pill previews
+  buildPills(singer, result.notes);
+  return true;
+}
+
+function buildPills(singer, notes) {
+  singer.el.pills.innerHTML = '';
+  for (const n of notes) {
+    const pill = document.createElement('span');
+    pill.className = 'pill';
+    if (n.isRest) {
+      pill.classList.add('rest');
+      pill.textContent = `r.${n.length}`;
+    } else {
+      pill.textContent = `${formatDisplay(n.name)}.${n.length}`;
+      // Check if pitch-shifted
+      if (singer.midiNumbers.length > 0 && !singer.buffers[n.midi]) {
+        pill.classList.add('shifted');
+      }
+    }
+    singer.el.pills.appendChild(pill);
+  }
+}
+
+/* ================================================================
+   Pitch shifting — find closest buffer
+   ================================================================ */
+
+/**
+ * For a given singer and target MIDI number, find the best buffer.
+ * Returns { buffer, playbackRate } or null if no buffers at all.
+ */
+function resolveNote(singer, targetMidi) {
+  if (singer.midiNumbers.length === 0) return null;
+
+  // Exact match?
+  if (singer.buffers[targetMidi]) {
+    return { buffer: singer.buffers[targetMidi], playbackRate: 1.0 };
+  }
+
+  // Find closest
+  let bestMidi = singer.midiNumbers[0];
+  let bestDist = Math.abs(targetMidi - bestMidi);
+  for (const m of singer.midiNumbers) {
+    const d = Math.abs(targetMidi - m);
+    if (d < bestDist) { bestDist = d; bestMidi = m; }
+  }
+
+  const semitoneDiff = targetMidi - bestMidi;
+  const rate = Math.pow(2, semitoneDiff / 12);
+  return { buffer: singer.buffers[bestMidi], playbackRate: rate };
+}
+
+/* ================================================================
+   Playback
+   ================================================================ */
+
+function startPlayback() {
+  hideError();
+  ensureAudioCtx();
+
+  // Parse all scores
+  const singerScores = [];
+  let hasError = false;
+
+  for (const singer of singers) {
+    const text = singer.el.textarea.value.trim();
+    if (text.length === 0) {
+      singerScores.push({ singer, notes: [], totalDuration: 0 });
+      continue;
+    }
+    const result = parseScore(text);
+    if (result.error) {
+      singer.el.validation.textContent = result.error;
+      singer.el.validation.className = 'validation err';
+      singer.el.textarea.classList.add('has-error');
+      hasError = true;
+    } else {
+      singerScores.push({ singer, notes: result.notes });
+      // Rebuild pills for playback
+      buildPills(singer, result.notes);
+    }
+  }
+
+  if (hasError) {
+    showError('Fix score errors above before playing.');
+    return;
+  }
+
+  // Check we have at least one note to play
+  const hasNotes = singerScores.some(ss => ss.notes.length > 0);
+  if (!hasNotes) {
+    showError('All score textboxes are empty — nothing to play.');
+    return;
+  }
+
+  // Resume audio context
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+
+  const bpm = parseFloat(bpmInput.value) || 120;
+  const semiquaverDur = 60 / bpm / 4; // duration of one semiquaver unit in seconds
+
+  // Calculate timings and schedule
+  activeSources = [];
+  let maxDuration = 0;
+
+  for (const ss of singerScores) {
+    let t = 0; // running time offset in seconds
+    ss.timings = []; // { startTime, duration } for each note
+    for (const note of ss.notes) {
+      const dur = note.length * semiquaverDur;
+      ss.timings.push({ startTime: t, duration: dur });
+      t += dur;
+    }
+    ss.totalDuration = t;
+    if (t > maxDuration) maxDuration = t;
+  }
+
+  totalPlaybackDuration = maxDuration;
+  const now = audioCtx.currentTime + 0.05; // tiny look-ahead
+  playbackStartTime = now;
+
+  for (const ss of singerScores) {
+    for (let i = 0; i < ss.notes.length; i++) {
+      const note = ss.notes[i];
+      if (note.isRest) continue;
+
+      const resolved = resolveNote(ss.singer, note.midi);
+      if (!resolved || !resolved.buffer) continue;
+
+      const source = audioCtx.createBufferSource();
+      source.buffer = resolved.buffer;
+      source.playbackRate.value = resolved.playbackRate;
+      source.connect(ss.singer.gainNode);
+
+      const startAt = now + ss.timings[i].startTime;
+      const dur = ss.timings[i].duration;
+      source.start(startAt);
+
+      // Cut off if note duration < buffer duration
+      if (dur < resolved.buffer.duration / resolved.playbackRate) {
+        source.stop(startAt + dur);
+      }
+
+      activeSources.push(source);
+    }
+  }
+
+  isPlaying = true;
+  playBtn.textContent = 'Stop';
+  playBtn.classList.add('stop');
+  setStatus('playing', 'Playing…');
+
+  // Visual updates
+  const allSingerScores = singerScores;
+  function tick() {
+    if (!isPlaying) return;
+    const elapsed = audioCtx.currentTime - playbackStartTime;
+    timeDisplay.textContent = fmtTime(elapsed) + ' / ' + fmtTime(totalPlaybackDuration);
+
+    // Update pills
+    for (const ss of allSingerScores) {
+      const pills = ss.singer.el.pills.children;
+      for (let i = 0; i < ss.notes.length; i++) {
+        if (!pills[i]) continue;
+        const t = ss.timings[i];
+        if (elapsed >= t.startTime && elapsed < t.startTime + t.duration) {
+          pills[i].classList.add('active');
+          pills[i].classList.remove('played');
+          // Auto-scroll pill into view
+          pills[i].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        } else if (elapsed >= t.startTime + t.duration) {
+          pills[i].classList.remove('active');
+          pills[i].classList.add('played');
+        } else {
+          pills[i].classList.remove('active', 'played');
+        }
+      }
+    }
+
+    if (elapsed >= totalPlaybackDuration) {
+      stopPlayback();
+      return;
+    }
+    animFrameId = requestAnimationFrame(tick);
+  }
+  animFrameId = requestAnimationFrame(tick);
+}
+
+function stopPlayback() {
+  isPlaying = false;
+  if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
+
+  for (const src of activeSources) {
+    try { src.stop(); } catch (_) { /* already stopped */ }
+  }
+  activeSources = [];
+
+  playBtn.textContent = 'Play';
+  playBtn.classList.remove('stop');
+  setStatus('ready', 'Ready');
+  timeDisplay.textContent = '';
+
+  // Clear active/played state from pills
+  for (const singer of singers) {
+    const pills = singer.el.pills.children;
+    for (let i = 0; i < pills.length; i++) {
+      pills[i].classList.remove('active', 'played');
+    }
+  }
+}
+
+playBtn.addEventListener('click', () => {
+  if (isPlaying) {
+    stopPlayback();
+  } else {
+    startPlayback();
+  }
+});
+
+/* ── Boot ────────────────────────────────────────────── */
+loadApp();
+
+})();
+</script>
 </body>
 </html>
