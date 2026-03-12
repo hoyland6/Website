@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Miracle Kitchen</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #1a1008;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Georgia', serif;
+    overflow: hidden;
+  }
+
+  .scene-container {
+    position: relative;
+    width: 420px;
+    height: 700px;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 0 60px rgba(255,180,80,0.3);
+  }
+
+  /* Background photo layer */
+  .bg-photo {
+    position: absolute;
+    inset: 0;
+    background: url('/mnt/user-data/uploads/1000088203.jpg') center/cover no-repeat;
+    filter: brightness(0.85);
+  }
+
+  /* Dark overlay for drama */
+  .drama-overlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 100%);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* ---- TABLE SCENE ---- */
+  .table-scene {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 380px;
+    z-index: 5;
+    transform-origin: bottom center;
+  }
+
+  /* The flat/broken table on the floor - matches the photo */
+  .table-flat {
+    position: absolute;
+    bottom: 0;
+    left: -10px;
+    right: -10px;
+    height: 220px;
+    animation: tableFixItself 1.5s ease-in-out 1.5s forwards,
+               tableUpright 2s cubic-bezier(0.34, 1.56, 0.64, 1) 3.5s forwards;
+    transform-origin: bottom center;
+  }
+
+  /* Table top surface */
+  .table-top {
+    position: absolute;
+    bottom: 0;
+    left: 10px;
+    right: 10px;
+    height: 180px;
+    background: linear-gradient(160deg, #c8753a 0%, #a0522d 40%, #7a3d1e 100%);
+    border-radius: 4px 4px 0 0;
+    box-shadow: inset 0 2px 8px rgba(255,255,255,0.15), inset 0 -4px 12px rgba(0,0,0,0.3);
+  }
+
+  /* Wood grain lines */
+  .table-top::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      92deg,
+      transparent 0px,
+      transparent 18px,
+      rgba(0,0,0,0.06) 18px,
+      rgba(0,0,0,0.06) 19px
+    );
+    border-radius: inherit;
+  }
+
+  /* Blood stain spots on table */
+  .stain {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, #6b1a1a 0%, #3d0d0d 60%, transparent 100%);
+    opacity: 0.85;
+  }
+  .stain1 { width: 28px; height: 20px; bottom: 60px; left: 140px; transform: rotate(-15deg); }
+  .stain2 { width: 14px; height: 10px; bottom: 40px; left: 200px; }
+  .stain3 { width: 10px; height: 8px; bottom: 80px; left: 230px; }
+  .stain4 { width: 22px; height: 16px; bottom: 55px; left: 260px; transform: rotate(20deg); }
+
+  /* Broken leg - initially detached, lying flat */
+  .broken-leg {
+    position: absolute;
+    width: 18px;
+    height: 90px;
+    background: linear-gradient(to right, #8B4513 0%, #a0522d 50%, #7a3d1e 100%);
+    border-radius: 3px;
+    bottom: 175px;
+    left: 85px;
+    transform: rotate(90deg) translateX(-20px);
+    transform-origin: bottom center;
+    animation: legReattach 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) 1.5s forwards;
+    z-index: 8;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+  }
+
+  /* Table legs (attached) */
+  .table-legs {
+    position: absolute;
+    bottom: -90px;
+    left: 10px;
+    right: 10px;
+    height: 90px;
+    opacity: 0;
+    animation: legsAppear 0.5s ease 3.2s forwards;
+  }
+  .leg {
+    position: absolute;
+    bottom: 0;
+    width: 18px;
+    height: 90px;
+    background: linear-gradient(to right, #8B4513 0%, #a0522d 50%, #7a3d1e 100%);
+    border-radius: 3px 3px 6px 6px;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+  }
+  .leg1 { left: 20px; }
+  .leg2 { left: 75px; }  /* the formerly broken one */
+  .leg3 { right: 75px; }
+  .leg4 { right: 20px; }
+
+  /* Magic sparkles for the fix */
+  .sparkle-group {
+    position: absolute;
+    bottom: 190px;
+    left: 60px;
+    z-index: 10;
+    opacity: 0;
+    animation: sparkleAppear 1s ease 1.5s forwards;
+  }
+
+  .sparkle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #FFD700;
+    box-shadow: 0 0 8px #FFD700, 0 0 16px #FFA500;
+    animation: sparklePop 0.8s ease-out forwards;
+  }
+  .sparkle:nth-child(1) { top: 0px; left: 0px; animation-delay: 1.5s; }
+  .sparkle:nth-child(2) { top: -15px; left: 20px; animation-delay: 1.6s; }
+  .sparkle:nth-child(3) { top: 10px; left: 35px; animation-delay: 1.55s; }
+  .sparkle:nth-child(4) { top: -8px; left: -15px; animation-delay: 1.65s; }
+  .sparkle:nth-child(5) { top: 20px; left: 10px; animation-delay: 1.7s; }
+  .sparkle:nth-child(6) { top: -20px; left: 45px; animation-delay: 1.58s; }
+
+  /* ---- ORGAN ---- */
+  .organ-container {
+    position: absolute;
+    top: 60px;
+    right: -280px;
+    width: 260px;
+    height: 320px;
+    z-index: 20;
+    animation: organSlideIn 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) 5s forwards;
+  }
+
+  .organ-body {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(145deg, #2c1810 0%, #4a2618 40%, #3a1e10 100%);
+    border-radius: 8px 8px 4px 4px;
+    box-shadow: -4px 4px 20px rgba(0,0,0,0.7), inset 0 0 20px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Organ pipes */
+  .pipes {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 3px;
+    padding: 8px 12px 0;
+    height: 100px;
+  }
+  .pipe {
+    background: linear-gradient(to right, #b8860b 0%, #ffd700 50%, #b8860b 100%);
+    border-radius: 2px 2px 0 0;
+    box-shadow: 1px 0 4px rgba(0,0,0,0.5);
+  }
+  .pipe:nth-child(1)  { width: 12px; height: 80px; }
+  .pipe:nth-child(2)  { width: 11px; height: 95px; }
+  .pipe:nth-child(3)  { width: 10px; height: 70px; }
+  .pipe:nth-child(4)  { width: 9px;  height: 85px; }
+  .pipe:nth-child(5)  { width: 10px; height: 60px; }
+  .pipe:nth-child(6)  { width: 11px; height: 75px; }
+  .pipe:nth-child(7)  { width: 12px; height: 90px; }
+  .pipe:nth-child(8)  { width: 10px; height: 65px; }
+  .pipe:nth-child(9)  { width: 9px;  height: 78px; }
+  .pipe:nth-child(10) { width: 11px; height: 55px; }
+
+  /* Keyboard area */
+  .keyboard-area {
+    margin: 8px 10px 0;
+    background: #1a0c06;
+    border-radius: 4px;
+    padding: 6px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.6);
+  }
+
+  .keys-row {
+    display: flex;
+    gap: 1px;
+    margin-bottom: 4px;
+    position: relative;
+    height: 36px;
+  }
+
+  .white-key {
+    flex: 1;
+    background: linear-gradient(to bottom, #f5f5f0 0%, #e8e8e0 100%);
+    border-radius: 0 0 3px 3px;
+    border: 1px solid #ccc;
+    height: 36px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    transition: transform 0.1s;
+  }
+
+  .black-keys {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    pointer-events: none;
+  }
+  .black-key {
+    width: 8px;
+    height: 22px;
+    background: linear-gradient(to bottom, #1a1a1a 0%, #333 100%);
+    border-radius: 0 0 2px 2px;
+    box-shadow: 1px 2px 4px rgba(0,0,0,0.5);
+    margin-left: 4px;
+  }
+  .bk-spacer { flex: 1; }
+
+  /* Animated key presses */
+  .white-key.playing {
+    animation: keyPress 0.3s ease infinite alternate;
+  }
+
+  /* Organ glow when playing */
+  .organ-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(255,200,50,0.1) 0%, transparent 70%);
+    animation: organGlow 0.5s ease infinite alternate;
+    opacity: 0;
+    animation-play-state: paused;
+  }
+  .organ-playing .organ-glow {
+    opacity: 1;
+    animation-play-state: running;
+  }
+
+  /* Music notes floating */
+  .music-note {
+    position: absolute;
+    font-size: 20px;
+    color: #FFD700;
+    text-shadow: 0 0 10px #FFA500;
+    opacity: 0;
+    z-index: 25;
+    animation: floatNote 2s ease-out infinite;
+  }
+  .note1 { top: 80px; right: 250px; animation-delay: 6s; }
+  .note2 { top: 60px; right: 230px; animation-delay: 6.4s; font-size: 16px; }
+  .note3 { top: 100px; right: 260px; animation-delay: 6.8s; font-size: 24px; }
+  .note4 { top: 70px; right: 240px; animation-delay: 7.2s; font-size: 18px; }
+
+  /* Caption */
+  .caption {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    color: #FFD700;
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    white-space: nowrap;
+    z-index: 30;
+    opacity: 0;
+    letter-spacing: 0.05em;
+    border: 1px solid rgba(255,215,0,0.3);
+    animation: captionFade 1s ease 5.5s forwards;
+  }
+
+  /* Holy light beam */
+  .holy-light {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(255,255,200,0.4) 0%, transparent 80%);
+    z-index: 3;
+    clip-path: polygon(40% 0%, 60% 0%, 80% 100%, 20% 100%);
+    opacity: 0;
+    animation: holyLight 3s ease 3.8s forwards;
+  }
+
+  /* ---- KEYFRAMES ---- */
+
+  @keyframes legReattach {
+    0%   { transform: rotate(90deg) translateX(-20px); opacity: 1; }
+    50%  { transform: rotate(45deg) translateX(-10px); }
+    100% { transform: rotate(0deg) translateX(0px); opacity: 0; }
+  }
+
+  @keyframes tableFixItself {
+    0%   { filter: none; }
+    50%  { filter: brightness(1.3) saturate(1.5); }
+    100% { filter: none; }
+  }
+
+  @keyframes legsAppear {
+    from { opacity: 0; bottom: -90px; }
+    to   { opacity: 1; bottom: -90px; }
+  }
+
+  @keyframes tableUpright {
+    0%   {
+      transform: perspective(600px) rotateX(80deg) translateY(100px);
+      transform-origin: bottom center;
+    }
+    60%  {
+      transform: perspective(600px) rotateX(-8deg) translateY(0px);
+    }
+    80%  {
+      transform: perspective(600px) rotateX(4deg) translateY(0px);
+    }
+    100% {
+      transform: perspective(600px) rotateX(0deg) translateY(-100px);
+      transform-origin: bottom center;
+    }
+  }
+
+  @keyframes sparklePop {
+    0%   { transform: scale(0); opacity: 1; }
+    50%  { transform: scale(1.5) translateY(-10px); opacity: 1; }
+    100% { transform: scale(0) translateY(-20px); opacity: 0; }
+  }
+
+  @keyframes sparkleAppear {
+    0%   { opacity: 0; }
+    20%  { opacity: 1; }
+    80%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  @keyframes organSlideIn {
+    0%   { right: -280px; opacity: 0; }
+    60%  { right: 8px; opacity: 1; }
+    75%  { right: 2px; }
+    100% { right: 6px; opacity: 1; }
+  }
+
+  @keyframes organGlow {
+    from { opacity: 0.5; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes keyPress {
+    from { transform: scaleY(1); }
+    to   { transform: scaleY(0.92); background: linear-gradient(to bottom, #e0e0d8 0%, #d4d4cc 100%); }
+  }
+
+  @keyframes floatNote {
+    0%   { opacity: 0; transform: translateY(0) scale(0.5); }
+    20%  { opacity: 1; transform: translateY(-10px) scale(1); }
+    80%  { opacity: 0.8; transform: translateY(-50px) scale(1.1) rotate(15deg); }
+    100% { opacity: 0; transform: translateY(-80px) scale(0.8) rotate(25deg); }
+  }
+
+  @keyframes captionFade {
+    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  @keyframes holyLight {
+    0%   { opacity: 0; }
+    30%  { opacity: 1; }
+    70%  { opacity: 0.8; }
+    100% { opacity: 0; }
+  }
+
+  /* Staggered key animation for playing effect */
+  .wk1 { animation: keyPress 0.25s ease 6.2s infinite alternate; }
+  .wk2 { animation: keyPress 0.3s ease 6.35s infinite alternate; }
+  .wk3 { animation: keyPress 0.28s ease 6.15s infinite alternate; }
+  .wk4 { animation: keyPress 0.32s ease 6.5s infinite alternate; }
+  .wk5 { animation: keyPress 0.27s ease 6.4s infinite alternate; }
+  .wk6 { animation: keyPress 0.29s ease 6.25s infinite alternate; }
+  .wk7 { animation: keyPress 0.31s ease 6.1s infinite alternate; }
+
+  .wk1b { animation: keyPress 0.26s ease 6.55s infinite alternate; }
+  .wk2b { animation: keyPress 0.33s ease 6.3s infinite alternate; }
+  .wk3b { animation: keyPress 0.25s ease 6.45s infinite alternate; }
+  .wk4b { animation: keyPress 0.28s ease 6.2s infinite alternate; }
+  .wk5b { animation: keyPress 0.30s ease 6.6s infinite alternate; }
+  .wk6b { animation: keyPress 0.27s ease 6.35s infinite alternate; }
+  .wk7b { animation: keyPress 0.32s ease 6.15s infinite alternate; }
+
+  /* Pipe vibration when playing */
+  .pipe-playing {
+    animation: pipeVibe 0.15s ease 6s infinite alternate;
+  }
+  @keyframes pipeVibe {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(1.04); }
+  }
+
+  /* Halo / glory effect over the scene */
+  .glory-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120px;
+    height: 120px;
+    transform: translate(-50%, -50%);
+    border: 3px solid rgba(255, 215, 0, 0.6);
+    border-radius: 50%;
+    z-index: 4;
+    opacity: 0;
+    animation: gloryRing 2s ease 4s forwards;
+  }
+  @keyframes gloryRing {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    50%  { opacity: 0.8; transform: translate(-50%, -50%) scale(1.5); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(3); }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="scene-container">
+
+  <!-- Background photo -->
+  <div class="bg-photo"></div>
+  <div class="drama-overlay"></div>
+  <div class="holy-light"></div>
+  <div class="glory-ring"></div>
+
+  <!-- Broken leg re-attaching -->
+  <div class="broken-leg"></div>
+
+  <!-- Sparkle effect -->
+  <div class="sparkle-group">
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+    <div class="sparkle"></div>
+  </div>
+
+  <!-- The table scene (flat → upright) -->
+  <div class="table-scene">
+    <div class="table-flat">
+      <div class="table-top">
+        <div class="stain stain1"></div>
+        <div class="stain stain2"></div>
+        <div class="stain stain3"></div>
+        <div class="stain stain4"></div>
+      </div>
+      <div class="table-legs">
+        <div class="leg leg1"></div>
+        <div class="leg leg2"></div>
+        <div class="leg leg3"></div>
+        <div class="leg leg4"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Church Organ sliding in -->
+  <div class="organ-container" id="organ">
+    <div class="organ-body" id="organBody">
+      <div class="organ-glow"></div>
+
+      <!-- Pipes -->
+      <div class="pipes">
+        <div class="pipe pipe-playing"></div>
+        <div class="pipe pipe-playing"></div>
+        <div class="pipe pipe-playing"></div>
+        <div class="pipe pipe-playing"></div>
+        <div class="pipe pipe-playing"></div>
+        <div class="pipe pipe-playing"></div>
+        <div class="pipe pipe-playing"></div>
+        <div class="pipe pipe-playing"></div>
+        <div class="pipe pipe-playing"></div>
+        <div class="pipe pipe-playing"></div>
+      </div>
+
+      <!-- Upper keyboard -->
+      <div class="keyboard-area">
+        <div style="font-size:9px; color:#8a6040; margin-bottom:4px; letter-spacing:0.1em; text-align:center;">MANUAL I</div>
+        <div class="keys-row">
+          <div class="white-key wk1"></div>
+          <div class="white-key wk2"></div>
+          <div class="white-key wk3"></div>
+          <div class="white-key wk4"></div>
+          <div class="white-key wk5"></div>
+          <div class="white-key wk6"></div>
+          <div class="white-key wk7"></div>
+          <div style="position:absolute;top:0;left:0;right:0;display:flex;gap:0;">
+            <div style="flex:0.6"></div>
+            <div class="black-key"></div>
+            <div style="flex:0.4"></div>
+            <div class="black-key"></div>
+            <div style="flex:0.8"></div>
+            <div class="black-key"></div>
+            <div style="flex:0.4"></div>
+            <div class="black-key"></div>
+            <div style="flex:0.4"></div>
+            <div class="black-key"></div>
+            <div style="flex:0.4"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lower keyboard -->
+      <div class="keyboard-area">
+        <div style="font-size:9px; color:#8a6040; margin-bottom:4px; letter-spacing:0.1em; text-align:center;">MANUAL II</div>
+        <div class="keys-row">
+          <div class="white-key wk1b"></div>
+          <div class="white-key wk2b"></div>
+          <div class="white-key wk3b"></div>
+          <div class="white-key wk4b"></div>
+          <div class="white-key wk5b"></div>
+          <div class="white-key wk6b"></div>
+          <div class="white-key wk7b"></div>
+          <div style="position:absolute;top:0;left:0;right:0;display:flex;">
+            <div style="flex:0.6"></div>
+            <div class="black-key"></div>
+            <div style="flex:0.4"></div>
+            <div class="black-key"></div>
+            <div style="flex:0.8"></div>
+            <div class="black-key"></div>
+            <div style="flex:0.4"></div>
+            <div class="black-key"></div>
+            <div style="flex:0.4"></div>
+            <div class="black-key"></div>
+            <div style="flex:0.4"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stops/knobs row -->
+      <div style="display:flex; justify-content:space-around; padding:6px 12px; margin-top:4px;">
+        <div style="width:10px;height:10px;background:radial-gradient(circle,#c0a060,#8B6914);border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.5)"></div>
+        <div style="width:10px;height:10px;background:radial-gradient(circle,#c0a060,#8B6914);border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.5)"></div>
+        <div style="width:10px;height:10px;background:radial-gradient(circle,#d44,#911);border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.5)"></div>
+        <div style="width:10px;height:10px;background:radial-gradient(circle,#c0a060,#8B6914);border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.5)"></div>
+        <div style="width:10px;height:10px;background:radial-gradient(circle,#c0a060,#8B6914);border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.5)"></div>
+        <div style="width:10px;height:10px;background:radial-gradient(circle,#c0a060,#8B6914);border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.5)"></div>
+      </div>
+
+      <div style="text-align:center; padding-bottom:6px;">
+        <span style="font-size:8px; color:#c8a060; letter-spacing:0.12em; text-shadow:0 0 6px rgba(255,200,80,0.5);">♦ SANCTUS PIPE ORGAN ♦</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating music notes -->
+  <div class="music-note note1">♪</div>
+  <div class="music-note note2">♫</div>
+  <div class="music-note note3">♩</div>
+  <div class="music-note note4">♬</div>
+
+  <!-- Caption -->
+  <div class="caption">🎹 He beheld the table. He played. 🪑</div>
+
+</div>
+
+<script>
+  // Add organ-playing class after it slides in
+  setTimeout(() => {
+    document.getElementById('organBody').classList.add('organ-playing');
+  }, 6200);
+
+  // Play audio tones using Web Audio API for organ sound
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) {
+      const ctx = new AudioContext();
+
+      function playNote(freq, startTime, duration, gain = 0.15) {
+        const osc = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        // Add harmonics for organ timbre
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        osc2.type = 'sine';
+        osc2.frequency.value = freq * 2;
+
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(gain, startTime + 0.05);
+        gainNode.gain.linearRampToValueAtTime(gain * 0.8, startTime + duration - 0.1);
+        gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+
+        gain2.gain.value = gain * 0.3;
+
+        osc.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+        osc2.start(startTime);
+        osc2.stop(startTime + duration);
+      }
+
+      // Bach-esque intro after organ appears (~6s)
+      setTimeout(() => {
+        const now = ctx.currentTime;
+        const notes = [
+          [261.63, 0.0, 0.4],   // C4
+          [329.63, 0.3, 0.4],   // E4
+          [392.00, 0.6, 0.4],   // G4
+          [523.25, 0.9, 0.6],   // C5
+          [493.88, 1.4, 0.3],   // B4
+          [440.00, 1.6, 0.3],   // A4
+          [392.00, 1.8, 0.5],   // G4
+          [523.25, 2.2, 0.8],   // C5 long
+          // Resolve
+          [261.63, 3.0, 1.2],   // C4 long
+          [329.63, 3.0, 1.2],   // E4 harmony
+          [392.00, 3.0, 1.2],   // G4 harmony
+        ];
+        notes.forEach(([freq, offset, dur]) => {
+          playNote(freq, now + offset, dur);
+        });
+      }, 6000);
+    }
+  } catch(e) {}
+</script>
+</body>
+</html>
